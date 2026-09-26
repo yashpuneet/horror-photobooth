@@ -5,10 +5,6 @@ import os
 # Constants
 GHOST = "assets/ghost.webp"
 
-if not os.path.exists(GHOST):
-    print(f"Error: '{GHOST}' not found")
-    exit()
-
 # Overlay logic
 def overlay(background, overlay):
     bg = background.copy()
@@ -27,39 +23,49 @@ def overlay(background, overlay):
 
     else:
         return background
+    
+def main():
 
-# Initialize the default webcam
-cap = cv2.VideoCapture(0)
+    if not os.path.exists(GHOST):
+        print(f"Error: '{GHOST}' not found")
+        exit()
 
-# Check if the camera opened correctly
-if not cap.isOpened():
-    print("Error: Could not access the webcam.")
-    exit()
 
-print("Camera feed running. Press 'q' on the video window to quit.")
+    # Initialize the default webcam
+    cam = cv2.VideoCapture(0)
 
-while True:
+    # Check if the camera opened correctly
+    if not cam.isOpened():
+        print("Error: Could not access the webcam.")
+        exit()
 
-    ret, frame = cap.read()
+    print("Camera feed running. Press 'q' on the video window to quit.")
 
-    if not ret:
-        print("Error: Failed to grab frame.")
-        break
+    while True:
 
-    h, w, _ = frame.shape
+        ret, frame = cam.read()
 
-    ghost = cv2.imread(GHOST, cv2.IMREAD_UNCHANGED)
-    ghost_resized = cv2.resize(ghost, (w,h), interpolation=cv2.INTER_AREA)
+        if not ret:
+            print("Error: Failed to grab frame.")
+            break
 
-    altered_frame = overlay(frame, ghost_resized)
+        h, w, _ = frame.shape
 
-    # Display
-    cv2.imshow('Horror Photobooth', altered_frame)
+        ghost = cv2.imread(GHOST, cv2.IMREAD_UNCHANGED)
+        ghost_resized = cv2.resize(ghost, (w,h), interpolation=cv2.INTER_AREA)
 
-    # if 'q' is pressed, exit
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        altered_frame = overlay(frame, ghost_resized)
 
-# Clean up
-cap.release()
-cv2.destroyAllWindows()
+        # Display
+        cv2.imshow('Horror Photobooth', altered_frame)
+
+        # if 'q' is pressed, exit
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Clean up
+    cam.release()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    main()
