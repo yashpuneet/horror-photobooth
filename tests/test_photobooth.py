@@ -1,17 +1,17 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import numpy as np
-import cv2
 import os
 import sys
+import unittest
+from unittest.mock import MagicMock, patch
+
+import numpy as np
 
 # Add parent directory to path so tests can import photobooth.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from photobooth import overlay, ensure_model_exists, process_frame
+from photobooth import ensure_model_exists, overlay, process_frame
+
 
 class TestPhotobooth(unittest.TestCase):
-
     def setUp(self):
         """Create mock image arrays for testing"""
         # 100x100 3-channel BGR frame (solid black)
@@ -32,23 +32,29 @@ class TestPhotobooth(unittest.TestCase):
         result = overlay(self.mock_bg, self.mock_overlay)
         self.assertEqual(result[50, 50, 2], 255)
 
-    @patch('photobooth.os.path.exists')
-    @patch('photobooth.urllib.request.urlretrieve')
+    def test_overlay__without_alpha(self):
+        """Verify fallback behavior when overlay has no alpha channel (BGR instead of BGRA)."""
+        bgr_overlay = np.zeros((100, 100, 3), dtype=np.uint8)
+        result = overlay(self.mock_bg, bgr_overlay)
+        np.testing.assert_array_equal(result, self.mock_bg)
+
+    @patch("photobooth.os.path.exists")
+    @patch("photobooth.urllib.request.urlretrieve")
     def test_ensure_model_downloads_when_missing(self, mock_urlretrieve, mock_exists):
         """Verify model downloads automatically when missing."""
         mock_exists.return_value = False
         ensure_model_exists()
         mock_urlretrieve.assert_called_once()
 
-    @patch('photobooth.os.path.exists')
-    @patch('photobooth.urllib.request.urlretrieve')
+    @patch("photobooth.os.path.exists")
+    @patch("photobooth.urllib.request.urlretrieve")
     def test_ensure_model_dowload_skips_when_present(self, mock_urlretrieve, mock_exists):
         """Verify download is skipped if model already exists on disk."""
         mock_exists.return_value = True
         ensure_model_exists()
         mock_urlretrieve.assert_not_called()
 
-    @patch('mediapipe.Image')
+    @patch("mediapipe.Image")
     def test_process_frame_layer_compositing(self, mock_mp_image):
         """Verify human foreground pixels are preserved and background replaced."""
         mock_segmentor = MagicMock()
@@ -71,5 +77,5 @@ class TestPhotobooth(unittest.TestCase):
         np.testing.assert_array_equal(output[0, 0], [0, 0, 255])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
